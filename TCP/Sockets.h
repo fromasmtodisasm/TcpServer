@@ -16,16 +16,16 @@ typedef int SOCKET;
 #include <string>
 #include <set>
 namespace tcp {
+
 	class Sockets
 	{
 	private:
 		const int MaxClients = SOMAXCONN;
 	public:
+		Sockets(SOCKET socket);
 		Sockets();
 		~Sockets();
-
-	protected:
-		enum ShutdownSocket
+		static enum ShutdownSocket
 		{
 #ifdef WIN32
 			SHUT_RD = SD_RECEIVE,
@@ -34,18 +34,24 @@ namespace tcp {
 #endif
 		}ShutdownSocket;
 	protected:
-		bool Send(SOCKET client, std::string msg);
-		int SetNonBlock(int fd);
-		void Disconnect(SOCKET client, int how);
+
+		SOCKET _Socket;
+	public:
+		bool Send(std::string msg);
+		int SetNonBlock();
+		void Disconnect(int how);
 		bool Init();
 		void Cleanup();
-		int  Listen(SOCKET MasterSocket);
-		SOCKET Socket();
-		int Recv(SOCKET Client, char *buffer, int BufferSize);
-		int RecvAll(SOCKET Client, char *buffer, int BufferSize);
-		SOCKET Accept(SOCKET MasterSocket);
+		int Bind(const struct sockaddr * name, int namelen);
+		int  Listen();
+		bool Socket();
+		void Close();
+		int Recv(char *buffer, int BufferSize);
+		int RecvAll(char *buffer, int BufferSize);
+		Sockets *Accept();
 		int	Select(fd_set &Set, timeval &time_out);
-		void FillSet(SOCKET MasterSocket, fd_set &Set, std::set<SOCKET> Clients);
+		void FillSet(fd_set &Set, std::set<Sockets*> Clients);
+		SOCKET GetSocket();
 	};
 
 }

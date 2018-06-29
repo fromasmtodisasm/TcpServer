@@ -7,7 +7,7 @@
 using namespace tcp::server;
 using namespace std;
 
-void MessageHandler(TcpServer *server, int client, string msg);
+void MessageHandler(TcpServer *server, Sockets *client, string msg);
 
 int main(int argc, char **argv)
 {
@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-void MessageHandler(TcpServer *server, int client, string msg)
+void MessageHandler(TcpServer *server, Sockets *client, string msg)
 {
 	string content = msg;
 	int len = content.size();
@@ -31,6 +31,6 @@ void MessageHandler(TcpServer *server, int client, string msg)
 	res += "\n\n" + content;
 	auto Clients = server->GetClients();
 	ostringstream ss;
-	ss << "SOCKET #" << client << ": " << msg << "\r\n";
+	ss << "SOCKET #" << client->GetSocket() << ": " << msg << "\r\n";
 	server->BroadCast(client, ss.str());
 }
