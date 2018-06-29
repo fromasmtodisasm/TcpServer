@@ -4,7 +4,7 @@
 #include <string>
 #include "tcp_server.h"
 
-using namespace tcp_server;
+using namespace tcp::server;
 using namespace std;
 
 void MessageHandler(TcpServer *server, int client, string msg);
