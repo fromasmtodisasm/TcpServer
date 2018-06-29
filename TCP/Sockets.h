@@ -1,5 +1,4 @@
 #pragma once
-namespace tcp {
 #include <sys/types.h>
 #ifndef WIN32
 #include <sys/socket.h>
@@ -7,12 +6,16 @@ namespace tcp {
 #include <unistd.h> 		/* close */
 #include <arpa/inet.h>	/* inet_addr */
 #include <fcntl.h>			/* fcntl */
-	typedef int SOCKET;
+typedef int SOCKET;
 #else
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <WS2tcpip.h>
 #define close closesocket
 #endif // !WIN32
+
+#include <string>
+#include <set>
+namespace tcp {
 	class Sockets
 	{
 	private:
@@ -39,6 +42,7 @@ namespace tcp {
 		int  Listen(SOCKET MasterSocket);
 		SOCKET Socket();
 		int Recv(SOCKET Client, char *buffer, int BufferSize);
+		int RecvAll(SOCKET Client, char *buffer, int BufferSize);
 		SOCKET Accept(SOCKET MasterSocket);
 		int	Select(fd_set &Set, timeval &time_out);
 		void FillSet(SOCKET MasterSocket, fd_set &Set, std::set<SOCKET> Clients);

@@ -68,6 +68,10 @@ namespace tcp {
 #endif // !WIN32
 		);
 	}
+	int RecvAll(SOCKET Client, char *buffer, int BufferSize)
+	{
+		int len = 0;
+	}
 	SOCKET Sockets::Accept(SOCKET MasterSocket) {
 		return accept(MasterSocket, NULL, NULL);
 	}
