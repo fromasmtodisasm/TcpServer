@@ -13,9 +13,9 @@ namespace tcp_server
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <WS2tcpip.h>
 #define close closesocket
-#endif // !_MSVCVER
+#endif // !WIN32
 	class TcpServer;
-	typedef void(*MessageRecived)(TcpServer *server, int client, char* msg);
+	typedef void(*MessageRecived)(TcpServer *server, int client, std::string msg);
 
 	class TcpServer
 	{
@@ -26,10 +26,11 @@ namespace tcp_server
 		char *buffer;
 		MessageRecived reciveHandler;
 		std::set<SOCKET> Clients;
-		//SOCKET *Clients;
 		int ClientsCount;
 		const int BufferSize = 8 * 1024;
 		const int SocketCount = 100;
+		const int MaxClients = SOMAXCONN;
+		const std::string Greating = "Welcom to awesome server!\r\n";
 		enum ShutdownSocket
 		{
 #ifdef WIN32
@@ -43,12 +44,22 @@ namespace tcp_server
 		~TcpServer();
 		bool Start();
 		bool Send(SOCKET client, std::string msg);
+		std::set<SOCKET> &GetClients();
+		void BroadCast(SOCKET from, std::string msg);
 	private:
-		bool loop();
-		int set_nonblock(int fd);
-		inline void disconnect(SOCKET client, int how);
-		inline bool init();
-		inline void cleanup();
-		SOCKET CreateSocket();
+		bool Run();
+		int SetNonBlock(int fd);
+		inline void Disconnect(SOCKET client, int how);
+		inline bool Init();
+		inline void Cleanup();
+		inline int  Listen();
+		inline SOCKET Socket();
+		inline int Recv(SOCKET Client);
+		inline SOCKET Accept();
+		inline int	Select(fd_set &Set, timeval &time_out);
+		inline void FillSet(fd_set &Set);
+		void ProcessIncomming(fd_set &Set);
+		bool CreateSocket();
+		
 	};
 }

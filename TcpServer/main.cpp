@@ -1,16 +1,17 @@
 #pragma once
 #include <iostream>
+#include <sstream>
 #include <string>
 #include "tcp_server.h"
 
 using namespace tcp_server;
 using namespace std;
 
-void MessageHandler(TcpServer *server, int client, char *msg);
+void MessageHandler(TcpServer *server, int client, string msg);
 
 int main(int argc, char **argv)
 {
-	string addr = "127.0.0.1";
+	string addr = "192.168.0.12";
 	int port = 12345;
 
 	TcpServer server(addr, port, MessageHandler);
@@ -21,16 +22,15 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-void MessageHandler(TcpServer *server, int client, char *msg)
+void MessageHandler(TcpServer *server, int client, string msg)
 {
-	string content = "\n\n<html>"\
-		"<body>"\
-		"<h1>Hello, World!</h1>"\
-		"</body>"\
-		"</html>";
-	string res = "HTTP/1.1 200 OK\nConnection: Keep-Alive\nContent-Length: " + to_string(content.size() - 2);
-	res += content;
-	//cout << "Response:" << endl << res << endl << endl;;
-
-	server->Send(client, res);
+	string content = msg;
+	int len = content.size();
+	cout << "Content len = " << len << endl;
+	string res;// = "HTTP/1.1 200 OK\nConnection: Keep-Alive\nContent-Length: " + to_string(len);
+	res += "\n\n" + content;
+	auto Clients = server->GetClients();
+	ostringstream ss;
+	ss << "SOCKET #" << client << ": " << msg << "\r\n";
+	server->BroadCast(client, ss.str());
 }
