@@ -15,43 +15,62 @@ typedef int SOCKET;
 
 #include <string>
 #include <set>
-namespace tcp {
 
-	class Sockets
-	{
-	private:
-		const int MaxClients = SOMAXCONN;
-	public:
-		Sockets(SOCKET socket);
-		Sockets();
-		~Sockets();
-		static enum ShutdownSocket
-		{
-#ifdef WIN32
-			SHUT_RD = SD_RECEIVE,
-			SHUT_WR = SD_SEND,
-			SHUT_RDWR = SD_BOTH
+#ifndef SOCKETSTATIC
+#ifdef SOCKETSDLL_EXPORT
+#define SOCKETSDLL_API __declspec(dllexport)
+#else
+#define SOCKETSDLL_API __declspec(dllimport)
+#endif // SOCKETSDLL_EXPORT
+#else
+#define SOCKETSDLL_API
 #endif
-		}ShutdownSocket;
-	protected:
 
-		SOCKET _Socket;
-	public:
-		bool Send(std::string msg);
-		int SetNonBlock();
-		void Disconnect(int how);
-		bool Init();
-		void Cleanup();
-		int Bind(const struct sockaddr * name, int namelen);
-		int  Listen();
-		bool Socket();
-		void Close();
-		int Recv(char *buffer, int BufferSize);
-		int RecvAll(char *buffer, int BufferSize);
-		Sockets *Accept();
-		int	Select(fd_set &Set, timeval &time_out);
-		void FillSet(fd_set &Set, std::set<Sockets*> Clients);
-		SOCKET GetSocket();
-	};
-
+#include "AddressFamily.h"
+#include "SocketType.h"
+#include "ProtocolType.h"
+namespace net {
+	namespace sockets {
+		class Socket
+		{
+		private:
+			const int MaxClients = SOMAXCONN;
+		public:
+			SOCKETSDLL_API Socket(SOCKET socket);
+			SOCKETSDLL_API Socket(
+				AddressFamily::AddressFamily addressFamily,
+				SocketType::SocketType socketType,
+				ProtocolType::ProtocolType protocolType
+			);
+			SOCKETSDLL_API ~Socket();
+			static enum ShutdownSocket
+			{
+#ifdef WIN32
+				SHUT_RD = SD_RECEIVE,
+				SHUT_WR = SD_SEND,
+				SHUT_RDWR = SD_BOTH
+#endif
+			}ShutdownSocket;
+		protected:
+			SOCKET socket;
+			sockaddr_in adr;
+			//bool inited = false;
+		public:
+			SOCKETSDLL_API bool Send(std::string msg);
+			SOCKETSDLL_API int SetNonBlock();
+			SOCKETSDLL_API void Disconnect(int how);
+			SOCKETSDLL_API bool Init();
+			SOCKETSDLL_API void Cleanup();
+			SOCKETSDLL_API int Bind(int port, std::string addres);
+			SOCKETSDLL_API int Listen();
+			SOCKETSDLL_API int Connect(int port, std::string addres);
+			SOCKETSDLL_API void Close();
+			SOCKETSDLL_API int Recive(char *buffer, int BufferSize);
+			SOCKETSDLL_API int RecvAll(SOCKET Client, char *buffer, int BufferSize);
+			SOCKETSDLL_API Socket *Accept();
+			SOCKETSDLL_API int	Select(fd_set &Set, timeval &time_out);
+			SOCKETSDLL_API void FillSet(fd_set &Set, std::set<Socket*> Clients);
+			SOCKETSDLL_API SOCKET GetSocket();
+		};
+	}
 }

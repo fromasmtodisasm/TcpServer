@@ -1,6 +1,6 @@
 #pragma once
 #include "Sockets.h"
-namespace tcp {
+namespace net {
 	namespace client {
 		class TcpClient
 		{

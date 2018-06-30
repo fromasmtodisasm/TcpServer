@@ -1,6 +1,6 @@
 #include "TcpClient.h"
 
-namespace tcp{
+namespace net{
 	namespace client {
 
 		TcpClient::TcpClient(std::string addr, int port)

@@ -258,4 +258,9 @@ paket-files/
 
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
-*.pyc
+*.pycDLL/*
+TCP/DLL/*
+TCP/STATIC/*
+TcpServer/DLL/*
+TcpServer/STATIC/*
+DLL/*

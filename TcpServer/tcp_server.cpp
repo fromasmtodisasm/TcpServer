@@ -6,127 +6,127 @@
 #include <sstream>
 #include <algorithm>
 #include "tcp_server.h"
-
 #ifdef WIN32
 #pragma comment(lib, "ws2_32.lib")
 #endif
 using namespace std;
-namespace tcp {
-	namespace server {
-		TcpServer::TcpServer(string addr, int port, MessageRecived handler)
-			: addr(addr), port(port), reciveHandler(handler)
-		{
-			ClientsCount = 0;
-		}
-		TcpServer::~TcpServer() {
-			for (auto Client = Clients.begin(); Client != Clients.end(); Client++) {
-				(*Client)->Disconnect(Sockets::SHUT_RDWR);
-			}
-			delete[] buffer;
-			MasterSocket.Close();
-			MasterSocket.Cleanup();
-			cout << "Server stopped" << endl;
-		}
-		bool TcpServer::Start() {
-			if (MasterSocket.Init()) {
-				if (CreateSocket()) {
-					cout << "Server started on port [" << port << "]" << endl;
-					buffer = new char[BufferSize];
-					Run();
-					return true;
-				}
-				return false;
-			}
-			return true;
-		}
-		bool TcpServer::Run() {
-			timeval time_out;
-			time_out.tv_sec = 0; time_out.tv_usec = 50000; // 0.05 sec
-			while (true) {
-				fd_set Set;
-				FD_ZERO(&Set);
-				/* Fill socket set */
-				MasterSocket.FillSet(Set, Clients);
-				/* Select sockets for read */
-				if (MasterSocket.Select(Set, time_out) > 0) {
-					ProcessIncomming(Set);
-				}
-			}
-		}
-		std::set<Sockets*> &TcpServer::GetClients() {
-			return Clients;
-		}
-		void TcpServer::BroadCast(Sockets *from, string msg)
-		{
-			for (auto Client = Clients.begin(); Client != Clients.end(); Client++)
-			{
-				if (from != *Client)
-				{
-					(*Client)->Send(msg);
-				}
-			}
-		}
+using namespace net::sockets;
 
-		void TcpServer::ProcessIncomming(fd_set &Set)
-		{
-			for (auto Client = Clients.begin(); Client != Clients.end(); Client++) {
-				if (FD_ISSET((*Client)->GetSocket(), &Set)) {
-					int byteRecived = (*Client)->Recv(buffer, BufferSize);
-					if ((byteRecived <= 0) && (errno != EAGAIN)) {
-						(*Client)->Disconnect(Sockets::SHUT_RDWR);
-						FD_CLR((*Client)->GetSocket(), &Set);
-						cout << "Connection closed" << endl;
-
-						ostringstream ss;
-						ss << "<SOCKET #" << *Client << ": " << "Offline>\r\n";
-						
-						BroadCast(*Client, ss.str());
-						delete *Client;
-						bool is_end = (Clients.erase(Client) == Clients.end());
-						if (is_end) {
-							break;
-						}
-					}
-					else {
-						cout << "Recived [" << byteRecived << "]" << endl;
-						if (reciveHandler != NULL) {
-							reciveHandler(this, *Client, string(buffer, 0, byteRecived));
-						}
-						buffer[0] = '\0';
-					}
-				}
-			}
-			if (FD_ISSET(MasterSocket.GetSocket(), &Set)) {
-				Sockets *NewClient = MasterSocket.Accept();
-				NewClient->SetNonBlock();
-				cout << "New client connected with fd[" << NewClient->GetSocket() << "]" << endl;
-				NewClient->Send(Greating);
-				ostringstream ss;
-				ss << "<SOCKET #" << NewClient << ": " << "Online>\r\n";
-				BroadCast(NewClient,ss.str());
-				Clients.insert(NewClient);
-			}
+namespace server {
+	TcpServer::TcpServer(string addr, int port, MessageRecived handler)
+		: addr(addr), port(port), reciveHandler(handler)
+	{
+		ClientsCount = 0;
+	}
+	TcpServer::~TcpServer() {
+		for (auto Client = Clients.begin(); Client != Clients.end(); Client++) {
+			(*Client).first->Send("Server stopped");
+			(*Client).first->Disconnect(Socket::SHUT_RDWR);
 		}
-		bool TcpServer::CreateSocket() {
-			if ((MasterSocket.Socket()) >= 0) {
-				sockaddr_in SockAddr;
-				SockAddr.sin_family = AF_INET;
-				SockAddr.sin_port = htons(port);
-				SockAddr.sin_addr.s_addr = inet_addr(addr.c_str());
-				MasterSocket.Bind((sockaddr*)(&SockAddr), sizeof(SockAddr));
-
-				MasterSocket.SetNonBlock();
-				if (MasterSocket.Listen() == 0) {
-					return true;
-				}
-				else {
-					perror("listen");
-				}
-			}
-			else {
-				perror("socket");
+		delete[] buffer;
+		MasterSocket->Close();
+		MasterSocket->Cleanup();
+		cout << "Server stopped" << endl;
+	}
+	bool TcpServer::Start() {
+		if (MasterSocket->Init()) {
+			if (CreateSocket()) {
+				cout << "Server started on port [" << port << "]" << endl;
+				buffer = new char[BufferSize];
+				Run();
+				return true;
 			}
 			return false;
 		}
+		return true;
+	}
+	bool TcpServer::Run() {
+		timeval time_out;
+		time_out.tv_sec = 0; time_out.tv_usec = 50000; // 0.05 sec
+		while (true) {
+			fd_set Set;
+			FD_ZERO(&Set);
+			/* Fill socket set */
+			/* Install MasterSocket for select */
+			FD_SET(MasterSocket->GetSocket(), &Set);
+			for (auto Client = Clients.begin(); Client != Clients.end(); Client++) {
+				/* Install ClientSocket for select */
+				FD_SET((*Client).first->GetSocket(), &Set);
+			}
+			/* Select sockets for read */
+			if (MasterSocket->Select(Set, time_out) > 0) {
+				ProcessIncomming(Set);
+			}
+		}
+	}
+	std::map<Socket*, Client*> &TcpServer::GetClients() {
+		return Clients;
+	}
+	void TcpServer::BroadCast(Socket *from, string msg) {
+		for (auto Client = Clients.begin(); Client != Clients.end(); Client++) {
+			if (from != (*Client).first) {
+				(*Client).first->Send(msg);
+			}
+		}
+	}
+	void TcpServer::ProcessIncomming(fd_set &Set)
+	{
+		for (auto Client = Clients.begin(); Client != Clients.end(); Client++) {
+			if (FD_ISSET((*Client).first->GetSocket(), &Set)) {
+				int byteRecived = (*Client).first->Recive(buffer, BufferSize);
+				if ((byteRecived <= 0) && (errno != EAGAIN)) {
+					(*Client).first->Disconnect(Socket::SHUT_RDWR);
+					FD_CLR((*Client).first->GetSocket(), &Set);
+					cout << "Connection closed" << endl;
+
+					ostringstream ss;
+					ss << "<SOCKET #" << (*Client).first->GetSocket() << ": " << "Offline>\r\n";
+						
+					BroadCast((*Client).first, ss.str());
+					delete (*Client).first;
+					delete (*Client).second;
+					bool is_end = (Clients.erase(Client) == Clients.end());
+					if (is_end) {
+						break;
+					}
+				}
+				else {
+					cout << "Recived [" << byteRecived << "]" << endl;
+					if (reciveHandler != NULL) {
+						reciveHandler(this, (*Client).first, string(buffer, 0, byteRecived));
+					}
+					buffer[0] = '\0';
+				}
+			}
+		}
+		if (FD_ISSET(MasterSocket->GetSocket(), &Set)) {
+			Socket *NewSocket = MasterSocket->Accept();
+			Client *NewClient = new Client();
+			NewSocket->SetNonBlock();
+			cout << "New client connected with fd[" << NewSocket->GetSocket() << "]" << endl;
+			NewSocket->Send(Greating);
+			ostringstream ss;
+			ss << "<SOCKET #" << NewSocket->GetSocket() << ": " << "Online>\r\n";
+			BroadCast(NewSocket,ss.str());
+			Clients[NewSocket] = NewClient;
+		}
+	}
+	bool TcpServer::CreateSocket() {
+		try {
+			MasterSocket = new Socket(AddressFamily::InterNetwork, SocketType::Stream, ProtocolType::Tcp);
+			MasterSocket->Bind(port, addr.c_str());
+
+			MasterSocket->SetNonBlock();
+			if (MasterSocket->Listen() == 0) {
+				return true;
+			}
+			else {
+				cerr << "Error on Listen" << endl;
+			}
+		}
+		catch(...) {
+			cerr << "CreateSocket error" << endl;
+		}
+		return false;
 	}
 }
