@@ -59,7 +59,6 @@ namespace net {
 			SOCKETSDLL_API bool Send(std::string msg);
 			SOCKETSDLL_API int SetNonBlock();
 			SOCKETSDLL_API void Disconnect(int how);
-			SOCKETSDLL_API bool Init();
 			SOCKETSDLL_API void Cleanup();
 			SOCKETSDLL_API int Bind(int port, std::string addres);
 			SOCKETSDLL_API int Listen();
@@ -71,6 +70,8 @@ namespace net {
 			SOCKETSDLL_API int	Select(fd_set &Set, timeval &time_out);
 			SOCKETSDLL_API void FillSet(fd_set &Set, std::set<Socket*> Clients);
 			SOCKETSDLL_API SOCKET GetSocket();
+		private:
+			bool Init();
 		};
 	}
 }

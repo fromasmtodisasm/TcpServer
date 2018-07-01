@@ -29,16 +29,13 @@ namespace server {
 		cout << "Server stopped" << endl;
 	}
 	bool TcpServer::Start() {
-		if (MasterSocket->Init()) {
-			if (CreateSocket()) {
-				cout << "Server started on port [" << port << "]" << endl;
-				buffer = new char[BufferSize];
-				Run();
-				return true;
-			}
-			return false;
+		if (CreateSocket()) {
+			cout << "Server started on port [" << port << "]" << endl;
+			buffer = new char[BufferSize];
+			Run();
+			return true;
 		}
-		return true;
+		return false;
 	}
 	bool TcpServer::Run() {
 		timeval time_out;
@@ -85,8 +82,8 @@ namespace server {
 					BroadCast((*Client).first, ss.str());
 					delete (*Client).first;
 					delete (*Client).second;
-					bool is_end = (Clients.erase(Client) == Clients.end());
-					if (is_end) {
+					//bool is_end = (Clients.erase(Client) == Clients.end());
+					if (Clients.erase(Client) == Clients.end()) {
 						break;
 					}
 				}
