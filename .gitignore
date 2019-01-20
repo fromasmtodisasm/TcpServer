@@ -264,3 +264,7 @@ TCP/STATIC/*
 TcpServer/DLL/*
 TcpServer/STATIC/*
 DLL/*
+/DebugDLL
+/TCP/DebugDLL
+/TcpServer/DebugDLL/TcpServer.tlog
+/TcpServer/DebugDLL

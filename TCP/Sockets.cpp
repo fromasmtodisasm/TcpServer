@@ -1,6 +1,7 @@
 #include <iostream>
 #include <set>
 #include "Sockets.h"
+#include "SocketException.h"
 #ifdef WIN32
 #pragma comment(lib, "ws2_32.lib")
 #endif
@@ -11,12 +12,21 @@ namespace net {
 			AddressFamily::AddressFamily addressFamily,
 			SocketType::SocketType socketType,
 			ProtocolType::ProtocolType protocolType
-		)
+		) : 
+			inited(false),
+			addressFamily(addressFamily),
+			socketType(socketType),
+			protocolType(protocolType)
 		{
-			socket = ::socket(addressFamily, socketType, protocolType);
-			if (socket == INVALID_SOCKET)
+			if (Init()) {
+				socket = ::socket(addressFamily, socketType, protocolType);
+				if (socket == INVALID_SOCKET) {
+					throw SocketException(SocketException::invalid_socket);
+				}
+			}
+			else
 			{
-				throw false;
+				throw SocketException(SocketException::init_error);
 			}
 		}
 		Socket::Socket(SOCKET socket) : socket(socket)
@@ -25,6 +35,11 @@ namespace net {
 		}
 		Socket::~Socket()
 		{
+			//cout << "Socket stoped" << endl;
+			if (inited = true) {
+				Close();
+				Cleanup();
+			}
 		}
 		bool Socket::Send(std::string msg) {
 			cout << "Sending..." << endl;
@@ -61,7 +76,7 @@ namespace net {
 			WSADATA data;
 			WORD ver MAKEWORD(2, 2);
 			wsInit = WSAStartup(ver, &data);
-			return (wsInit == 0);
+			return inited = (wsInit == 0);
 #endif
 			return true;
 		}
@@ -89,7 +104,7 @@ namespace net {
 			return ::connect(socket, (sockaddr*)&SockAddr, sizeof(SockAddr));
 		}
 		void Socket::Close() {
-			close(socket);
+				close(socket);
 		}
 		int Socket::Recive(char *buffer, int BufferSize) {
 			return recv(socket, buffer, BufferSize,

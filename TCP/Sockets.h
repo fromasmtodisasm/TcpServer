@@ -54,7 +54,11 @@ namespace net {
 		protected:
 			SOCKET socket;
 			sockaddr_in adr;
-			//bool inited = false;
+			bool inited;
+
+			AddressFamily::AddressFamily addressFamily;
+			SocketType::SocketType socketType;
+			ProtocolType::ProtocolType protocolType;
 		public:
 			SOCKETSDLL_API bool Send(std::string msg);
 			SOCKETSDLL_API int SetNonBlock();

@@ -37,6 +37,7 @@
   <ItemGroup>
     <ClInclude Include="AddressFamily.h" />
     <ClInclude Include="ProtocolType.h" />
+    <ClInclude Include="SocketException.h" />
     <ClInclude Include="Sockets.h" />
   </ItemGroup>
   <ItemGroup>

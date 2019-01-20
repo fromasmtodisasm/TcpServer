@@ -4,7 +4,7 @@
 namespace server
 {
 	class TcpServer;
-	typedef void(*MessageRecived)(TcpServer *server, net::sockets::Socket *client, std::string msg);
+	typedef bool (*MessageRecived)(TcpServer *server, net::sockets::Socket *client, std::string msg);
 
 	class TcpServer
 	{
@@ -15,6 +15,7 @@ namespace server
 		std::map<net::sockets::Socket*,Client*> Clients;
 		MessageRecived reciveHandler;
 		int ClientsCount;
+		bool is_exit = false;
 		const int BufferSize = 8 * 1024;
 		const int SocketCount = 100;
 		const std::string Greating = "Welcom to awesome server!\r\n";

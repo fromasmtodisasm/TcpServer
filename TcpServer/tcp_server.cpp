@@ -6,6 +6,7 @@
 #include <sstream>
 #include <algorithm>
 #include "tcp_server.h"
+#include "SocketException.h"
 #ifdef WIN32
 #pragma comment(lib, "ws2_32.lib")
 #endif
@@ -22,10 +23,10 @@ namespace server {
 		for (auto Client = Clients.begin(); Client != Clients.end(); Client++) {
 			(*Client).first->Send("Server stopped");
 			(*Client).first->Disconnect(Socket::SHUT_RDWR);
+			delete (*Client).first;
 		}
 		delete[] buffer;
-		MasterSocket->Close();
-		MasterSocket->Cleanup();
+		delete MasterSocket;
 		cout << "Server stopped" << endl;
 	}
 	bool TcpServer::Start() {
@@ -40,7 +41,7 @@ namespace server {
 	bool TcpServer::Run() {
 		timeval time_out;
 		time_out.tv_sec = 0; time_out.tv_usec = 50000; // 0.05 sec
-		while (true) {
+		while (!is_exit) {
 			fd_set Set;
 			FD_ZERO(&Set);
 			/* Fill socket set */
@@ -55,6 +56,7 @@ namespace server {
 				ProcessIncomming(Set);
 			}
 		}
+		return true;
 	}
 	std::map<Socket*, Client*> &TcpServer::GetClients() {
 		return Clients;
@@ -82,7 +84,8 @@ namespace server {
 					BroadCast((*Client).first, ss.str());
 					delete (*Client).first;
 					delete (*Client).second;
-					//bool is_end = (Clients.erase(Client) == Clients.end());
+					ClientsCount--;
+					cout << "Clients: " << ClientsCount << endl;
 					if (Clients.erase(Client) == Clients.end()) {
 						break;
 					}
@@ -90,7 +93,7 @@ namespace server {
 				else {
 					cout << "Recived [" << byteRecived << "]" << endl;
 					if (reciveHandler != NULL) {
-						reciveHandler(this, (*Client).first, string(buffer, 0, byteRecived));
+						is_exit = reciveHandler(this, (*Client).first, string(buffer, 0, byteRecived));
 					}
 					buffer[0] = '\0';
 				}
@@ -106,6 +109,8 @@ namespace server {
 			ss << "<SOCKET #" << NewSocket->GetSocket() << ": " << "Online>\r\n";
 			BroadCast(NewSocket,ss.str());
 			Clients[NewSocket] = NewClient;
+			ClientsCount++;
+			cout << "Clients: " << ClientsCount << endl;
 		}
 	}
 	bool TcpServer::CreateSocket() {
@@ -121,8 +126,8 @@ namespace server {
 				cerr << "Error on Listen" << endl;
 			}
 		}
-		catch(...) {
-			cerr << "CreateSocket error" << endl;
+		catch(SocketException se) {
+			cerr << se.what() << endl;
 		}
 		return false;
 	}
